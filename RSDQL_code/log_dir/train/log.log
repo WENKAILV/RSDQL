@@ -1,6 +1,0 @@
-[32m[06-15 10:09:58 MainThread @logger.py:95][0m nvidia-smi -L found gpu count: 1
-[33m[06-15 10:09:58 MainThread @logger.py:95][0m [5m[33mWRN[0m Found non-empty CUDA_VISIBLE_DEVICES.                 But PARL found that Paddle was not complied with CUDA, which may cause issues.
-[32m[06-15 10:09:58 MainThread @logger.py:95][0m nvidia-smi -L found gpu count: 1
-[33m[06-15 10:09:58 MainThread @logger.py:95][0m [5m[33mWRN[0m Found non-empty CUDA_VISIBLE_DEVICES.                 But PARL found that Paddle was not complied with CUDA, which may cause issues.
-[32m[06-15 10:10:12 MainThread @logger.py:95][0m nvidia-smi -L found gpu count: 1
-[33m[06-15 10:10:12 MainThread @logger.py:95][0m [5m[33mWRN[0m Found non-empty CUDA_VISIBLE_DEVICES.                 But PARL found that Paddle was not complied with CUDA, which may cause issues.

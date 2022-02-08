@@ -1,7 +1,5 @@
-
-
-alpha = 0.5 # reward权重因子
-beta =[1,0] # 不同资源的重要程度
+alpha = 0.5 # reward weighting factor
+beta =[1,0] 
 count = 0
 
 from dataSet.data import Data
@@ -18,12 +16,12 @@ ServiceNumber = data.ServiceNumber
 ResourceType = data.ResourceType
 service_containernum = data.service_containernum
 
-service_container = data.service_container # 服务需要哪几个container完成
+service_container = data.service_container 
 service_container_relationship = data.service_container_relationship
 container_state1 = data.container_state_queue[:]
 class Env():
     def __init__(self):
-        # 整体state
+        # State
         self.State = []
         self.node_state_queue = []
         self.container_state_queue = []
@@ -32,23 +30,19 @@ class Env():
 
     def prepare(self):
         self.container_state_queue = container_state1[:]
-        #print("初始container state",self.container_state_queue)
-
         for i in range(NodeNumber):
             for j in range(ContainerNumber + 2):
                 self.node_state_queue.append(0)
-        # print(self.node_state_queue)
         self.State = self.container_state_queue + self.node_state_queue
         self.action = [-1,-1]
         self.action_queue = [-1,-1]
-    # 构建微服务权重、节点间通信距离的数组
-        # 微服务之间的通信权重，1，10之间
+        # Communication weight between microservices
         self.service_weight = data.service_weight
-        # 节点之间的通信距离Dist
+        # Communication distance between nodes
         self.Dist = data.Dist
 
     def ContainerCost(self,i,j):
-    # 计算容器i、j间的距离
+    # to calculate the distance between container i and j
         m = -1
         n = -1
         m = self.container_state_queue[i*3]
@@ -64,8 +58,7 @@ class Env():
         return container_dist
 
     def CalcuCost(self,i,j):
-    # 计算服务i、j间的通信开销
-        # 服务i、j间的通信权重
+    # to calculate the communication cost between container i and j
         cost = 0
         interaction = self.service_weight[i][j] / (service_containernum[i] * service_containernum[j])
         for k in range ( len(service_container[i]) ):
@@ -74,7 +67,6 @@ class Env():
         return cost
 
     def sumCost(self):
-    # 总通信开销
         Cost = 0
         for i in range (ServiceNumber):
             for j in range (ServiceNumber):
@@ -92,7 +84,7 @@ class Env():
             NodeMemory.append(M)
             if NodeCPU[i] > 1 or NodeMemory[i] > 1:
                 Var = -10  
-        # 节点负载的方差
+        # Variance of node load
         Var += beta[0] * np.var(NodeCPU) + beta[1] * np.var(NodeMemory)
         return Var
 
@@ -112,12 +104,12 @@ class Env():
         self.State = container_state_queue + node_state_queue
 
     def update(self):
-    # state更新
+    # update state
 
         if self.action[0] >= 0 and self.action[1] >= 0:
-            # 更新容器状态
+            # update container state
             self.container_state_queue[ self.action[1] * 3 ] = self.action[0] 
-            # 更新节点状态
+            # update node state
             self.node_state_queue[ self.action[0] * (ContainerNumber+2) + self.action[1] ] = 1
             self.node_state_queue[ self.action[0] * (ContainerNumber+2) + ContainerNumber] += self.container_state_queue[ self.action[1] * 3 + 1 ]
             self.node_state_queue[ self.action[0] * (ContainerNumber+2) + (ContainerNumber + 1) ] += self.container_state_queue[ self.action[1] * 3 + 2 ]
@@ -133,13 +125,11 @@ class Env():
         return self.State
 
     def step(self,action):
-    # 输入action（Targetnode，ContainerIndex），输出下一状态、cost、done
+    # input: action(Targetnode，ContainerIndex)
+    # output: next state, cost, done
         global count
-        # 把一维action转成二维
         self.action = self.index_to_act(action)
-        # 更新state
         self.update()
-        # 计算reward
         cost,comm,var = self.cost()   
         done = False 
         count = 0

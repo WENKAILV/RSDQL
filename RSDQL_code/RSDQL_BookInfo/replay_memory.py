@@ -31,8 +31,8 @@ class ReplayMemory(object):
         obs_batch, action_batch, reward_batch, next_obs_batch, done_batch = [], [], [], [], []
 
         for experience in mini_batch:
-            s, a, r, s_p, done = experience #增加一条经验（obs,action,reward,next_obs,done）
-            #随机抽取一个batch的数据
+            s, a, r, s_p, done = experience # add (obs,action,reward,next_obs,done)
+            # Randomly extract a batch of data
             obs_batch.append(s)
             action_batch.append(a)
             reward_batch.append(r)

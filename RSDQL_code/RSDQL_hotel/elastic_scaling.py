@@ -8,7 +8,7 @@ delta = 0.3
 alpha = 0.5
 beta = 0.5
 
-df = pd.read_excel('D:\\RL code\\dqn_final\\monitor.xlsx',header=0) #??????
+df = pd.read_excel('D:\\RL code\\dqn_final\\monitor.xlsx',header=0) 
 df2 = pd.read_excel('D:\\RL code\\dqn_final\\cost.xlsx',header=0) 
 data = df.values[1]
 data2 = df2.values[0]

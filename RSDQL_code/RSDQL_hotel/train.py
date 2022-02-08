@@ -16,12 +16,10 @@
 
 import os
 from typing import Container
-#import gym
 import numpy as np
 import parl
-from parl.utils import logger  # 日志打印工具
+from parl.utils import logger  
 import logging
-# logging.basicConfig(level=logging.INFO,filename='a.log')
 
 from model import Model
 from algorithm import DQN  # from parl.algorithms import DQN  # parl >= 1.3.1
@@ -36,12 +34,12 @@ from agent import flag_temp
 from env import ContainerNumber
 from env import NodeNumber
 
-LEARN_FREQ = 8  # 训练频率，不需要每一个step都learn，攒一些新增经验后再learn，提高效率
-MEMORY_SIZE = 20000  # replay memory的大小，越大越占用内存
-MEMORY_WARMUP_SIZE = 200  # replay_memory 里需要预存一些经验数据，再从里面sample一个batch的经验让agent去learn
-BATCH_SIZE = 32  # 每次给agent learn的数据数量，从replay memory随机里sample一批数据出来
-LEARNING_RATE = 0.001#0.001  # 学习率
-GAMMA = 0.9  # reward 的衰减因子，一般取 0.9 到 0.999 不等
+LEARN_FREQ = 8  # learning frequency
+MEMORY_SIZE = 20000  # size of replay memory
+MEMORY_WARMUP_SIZE = 200  
+BATCH_SIZE = 32  
+LEARNING_RATE = 0.001
+GAMMA = 0.9  
 
 sc_comm = 0
 sc_var = 0
@@ -52,7 +50,7 @@ for i in range(ContainerNumber):
     allCost.append([])
 test_reward = 0
 test_evareward = 0
-# 训练一个episode
+
 def run_episode(env, agent, rpm):
     global flag1
     global allCost
@@ -82,7 +80,7 @@ def run_episode(env, agent, rpm):
         step += 1  
         obs_list.append(obs)
         
-        action = agent.sample(obs)  # 采样动作，所有动作都有概率被尝试到
+        action = agent.sample(obs)  
         action_list.append(action)
         next_obs, cost, done,_,_ = env.step(action)
         next_obslist.append(next_obs)
@@ -91,7 +89,7 @@ def run_episode(env, agent, rpm):
         if allCost[step -1 ]:
             mini = min(allCost[step-1])        
         if flag1 == 0:
-        #如果是第一个episode，直接把当前计算的cost存下来
+        # if it's the first episode, save the cost directly
             if cost > 0:
                 allCost[step - 1].append(cost)
                 reward = 0
@@ -122,11 +120,10 @@ def run_episode(env, agent, rpm):
         for h in root_logger.handlers[:]:
             root_logger.removeHandler(h)
         logging.basicConfig(level=logging.INFO,filename='details.log')
-        logging.info('episode:{}  step:{} Cost:{} min Cost:{} Reward:{} 全局reward:{} Action:{}'.format(
+        logging.info('episode:{}  step:{} Cost:{} min Cost:{} Reward:{} global reward:{} Action:{}'.format(
             ep,step, cost,mini,reward,test_reward,env.index_to_act(action)))
         
         # train model
-        # 当经验池放够数据，才训练模型
         if (len(rpm) > MEMORY_WARMUP_SIZE) and (step % LEARN_FREQ == 0):
             (batch_obs, batch_action, batch_reward, batch_next_obs,
              batch_done) = rpm.sample(BATCH_SIZE)
@@ -142,7 +139,7 @@ def run_episode(env, agent, rpm):
     return total_reward,total_cost
 
 
-# 评估 agent, 跑 5 个episode，总reward求平均
+# evaluate agent
 def evaluate(env, agent):
     global sc_comm,sc_var
     eval_totalCost = []
@@ -161,7 +158,7 @@ def evaluate(env, agent):
         step = 0
         while True:
             step +=1
-            action = agent.predict(obs)  # 预测动作，只选最优动作
+            action = agent.predict(obs)  
             obs, cost, done,comm,var = env.step(action)
             if cost > 0:
                 if step == ContainerNumber:
@@ -190,34 +187,31 @@ def main():
     env = Env()
     action_dim = ContainerNumber * NodeNumber 
     obs_shape = ContainerNumber * 3 + NodeNumber * (ContainerNumber + 2)  
-    # DQN的经验回放池
     rpm = ReplayMemory(MEMORY_SIZE)  
-    # 根据parl框架构建agent
     model = Model(act_dim=action_dim)
     algorithm = DQN(model, act_dim=action_dim, gamma=GAMMA, lr=LEARNING_RATE)
     agent = Agent(
         algorithm,
         obs_dim=obs_shape,
         act_dim=action_dim,
-        e_greed=0.2,  # 有一定概率随机选取动作，探索
-        e_greed_decrement=1e-6)  # 随着训练逐步收敛，探索的程度慢慢降低
-    # 加载模型
+        e_greed=0.2,  
+        e_greed_decrement=1e-6)  
+    # load model
     # save_path = './dqn_model.ckpt'
     # agent.restore(save_path)
 
-    # 先往经验池里存一些数据，避免最开始训练的时候样本丰富度不够
     while len(rpm) < MEMORY_WARMUP_SIZE:
         run_episode(env, agent, rpm)
     max_episode = 10000
 
     # start train
     episode = 0
-    while episode < max_episode:  # 训练max_episode个回合，test部分不计算入episode数量
+    while episode < max_episode: 
         # train part
         for i in range(0, 50):
             total_reward,_ = run_episode(env, agent, rpm)
             episode += 1
-            with open("reward.txt", "a") as q:  # 保存每次迭代的total_reward
+            with open("reward.txt", "a") as q:  
                 q.write("%05d,%.3f \n" % ( episode , total_reward))
             
         # test part
@@ -232,7 +226,7 @@ def main():
         logging.info('episode:{} e_greed:{} Cost: {} Reward:{} Action:{}'.format(
             episode, agent.e_greed, np.mean(eval_totalCost),np.mean(eval_totalReward), env.action_queue))
 
-    # 训练结束，保存模型
+    # After training, save the model
     save_path = './dqn_model.ckpt'
     agent.save(save_path)
     return sc_comm,sc_var

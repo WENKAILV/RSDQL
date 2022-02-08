@@ -5,9 +5,9 @@ from xml.etree import ElementTree as ET
 CPUnum = 7
 Mem = 8*1024
 
-dom1 = xml.dom.minidom.parse('D:\\RL code\\dataSet\\data.xml')
+dom1 = xml.dom.minidom.parse('D:\\RL code\\hotel\\dataSet\\data.xml')
 root = dom1.documentElement
-dom2 = ET.parse('D:\\RL code\\dqn_final\\dataSet\\data.xml')
+dom2 = ET.parse('D:\\RL code\\hotel\\dataSet\\data.xml')
 
 class Data():
     def __init__(self):

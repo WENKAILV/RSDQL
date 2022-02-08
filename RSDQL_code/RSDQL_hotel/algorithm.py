@@ -25,10 +25,10 @@ class DQN(parl.Algorithm):
         """ DQN algorithm
         
         Args:
-            model (parl.Model): 定义Q函数的前向网络结构
-            act_dim (int): action空间的维度，即有几个action
-            gamma (float): reward的衰减因子
-            lr (float): learning_rate，学习率.
+            model (parl.Model): the network forwarding structure of the Q function
+            act_dim (int): dimensions of action
+            gamma (float): attenuation factor of reward
+            lr (float): learning_rate
         """
         self.model = model
         self.target_model = copy.deepcopy(model)
@@ -41,49 +41,37 @@ class DQN(parl.Algorithm):
         self.lr = lr
 
     def predict(self, obs):
-        """ 使用self.model的value网络来获取 [Q(s,a1),Q(s,a2),...]
+        """ use value network of self.model to get [Q(s,a1),Q(s,a2),...]
         """
         return self.model.value(obs)
 
     def learn(self, obs, action, reward, next_obs, terminal):
-        """ 使用DQN算法更新self.model的value网络
+        """ use DQN algorithm to update value network of self.model
         """
-   #     print("first act_dim",self.act_dim)
-        # 1. 从target_model中获取 max Q' 的值，用于计算target_Q
+  
         next_pred_value = self.target_model.value(next_obs)
-        # 获得下一步状态下，所有可执行动作的Q值，然后求最大Q值
         best_v = layers.reduce_max(next_pred_value, dim=1)
-        best_v.stop_gradient = True  # 阻止梯度传递
-        terminal = layers.cast(terminal, dtype='float32')#转换成浮点数，true就是1，false就是0
+        best_v.stop_gradient = True  # prevent gradient
+        terminal = layers.cast(terminal, dtype='float32')# convert to float，true equals 1, false equals 0
         target = reward + (1.0 - terminal) * self.gamma * best_v
 
-        # 2.获取Q预测值
-        # 正向传播，即获得了该状态下，所有动作对应的Q值
+        # forward propagation
         pred_value = self.model.value(obs)  
-        # 将action转onehot向量，比如：3 => [0,0,0,1,0]
-        #print("algorithm中的act_dim",self.act_dim)
-        action_onehot = layers.one_hot(action, self.act_dim)
-        #print("algorithm中的act_dim_2",self.act_dim)
-
-        # 设置one-hot中的值为float32类型
+        # Convert action to onehot vector
+        action_onehot = layers.one_hot(action, self.act_dim)     
         action_onehot = layers.cast(action_onehot, dtype='float32')
 
-        # 下面一行是逐元素相乘，拿到action对应的 Q(s,a)
-        # 比如：pred_value = [[2.3, 5.7, 1.2, 3.9, 1.4]], action_onehot = [[0,0,0,1,0]]
-        #  ==> pred_action_value = [[3.9]]
-        # 当前状态下，执行该动作得到的Q值（预测值）
         pred_action_value = layers.reduce_sum(
-            layers.elementwise_mul(action_onehot, pred_value), dim=1)#按位相乘，再相加
+            layers.elementwise_mul(action_onehot, pred_value), dim=1)
 
-        # 计算 Q(s,a) 与 target_Q的均方差，得到loss
+        # get loss
         cost = layers.square_error_cost(pred_action_value, target)
         cost = layers.reduce_mean(cost)
-        optimizer = fluid.optimizer.Adam(learning_rate=self.lr)  # 使用Adam优化器
+        optimizer = fluid.optimizer.Adam(learning_rate=self.lr)  # use Adam optimizer
         optimizer.minimize(cost)
-   #     print("cost",cost)
         return cost
 
     def sync_target(self):
-        """ 把 self.model 的模型参数值同步到 self.target_model
+        """ Synchronize the model parameter values of self.model to self.target_model
         """
         self.model.sync_weights_to(self.target_model)

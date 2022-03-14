@@ -1,2 +1,2 @@
 # RSDQL
-The source code and experimental results of RSDQL.
+The source code of RSDQL.
